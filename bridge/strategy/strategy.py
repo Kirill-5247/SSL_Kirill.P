@@ -87,15 +87,33 @@ class Strategy:
         - actions[9] = Actions.BallGrab(0.0)
                 The robot number 9 grabs the ball at an angle of 0.0 (it looks to the right, along the OX axis)
         """
-        v = field.enemy_goal.center - aux.Point(500,700) 
-        actions[2] = Actions.GoToPoint(aux.Point(500,700),v.arg())
-        v2 = field.enemy_goal.center - aux.Point(1000,1000) 
-        actions[1] = Actions.GoToPoint(aux.Point(1000,1000),v2.arg())
-        v3 = field.ball.get_pos() - field.allies[0].get_pos() 
-        v1 = field.ball.get_pos() - field.enemy_goal.center 
-        v4 = v1 + v1/v1.mag()*135
-        actions[0] = Actions.GoToPoint(field.enemy_goal.center+v4,v3.arg())
 
-        field.strategy_image.draw_line(field.ball.get_pos() - field.enemy_goal.center, field.allies[0].get_pos() )
+        v3 = field.ball.get_pos() - field.allies[1].get_pos() 
+        v1 = field.ball.get_pos() - field.enemy_goal.center 
+        v4 = v1 + v1/v1.mag()*600
+        actions[1] = Actions.GoToPoint(field.enemy_goal.center+v4,v3.arg())
+
+
+        v5 = field.enemies[1].get_pos() - field.ball.get_pos() 
+        v6 = field.enemies[1].get_pos() - v5.unity()*200
+        v7 = v6 - field.enemies[1].get_pos()
+        actions[0] = Actions.GoToPoint(v6,v7.arg())
+        field.strategy_image.draw_line(v5, v6 )
+        field.strategy_image.draw_line(field.ball.get_pos() - field.enemy_goal.center, field.allies[1].get_pos() )
+
+
+        v8 = field.enemies[0].get_pos() - field.ally_goal.center 
+        v9 = field.ally_goal.center  + v8.unity()*300
+        v10 = v9 - field.enemies[0].get_pos()
+        actions[2] = Actions.GoToPoint(v9,v10.arg()-math.pi)
+        
+        
+        
+        
+        
+        
+        
+        
+
 
 

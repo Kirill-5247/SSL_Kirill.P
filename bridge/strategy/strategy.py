@@ -4,7 +4,7 @@
 import math  # type: ignore  # noqa: F401
 from time import time  # type: ignore  # noqa: F401
 from typing import Optional
-
+import random
 from bridge import const
 from bridge.auxiliary import aux, fld, rbt  # type: ignore  # noqa: F401
 from bridge.const import State as GameStates
@@ -23,6 +23,7 @@ class Strategy:
         self,
     ) -> None:
         self.we_active = False
+        self.is_target_set = False
 
     def process(self, field: fld.Field) -> list[Optional[Action]]:
         """Game State Management"""
@@ -87,11 +88,22 @@ class Strategy:
         - actions[9] = Actions.BallGrab(0.0)
                 The robot number 9 grabs the ball at an angle of 0.0 (it looks to the right, along the OX axis)
         """
-
+        
         v3 = field.ball.get_pos() - field.allies[1].get_pos() 
         v1 = field.ball.get_pos() - field.enemy_goal.center 
-        v4 = v1 + v1/v1.mag()*600
-        actions[1] = Actions.GoToPoint(field.enemy_goal.center+v4,v3.arg())
+        v4 = v1 + v1/v1.mag()*50
+        # actions[1] = Actions.GoToPoint(field.enemy_goal.center+v4,v3.arg())
+        p1 = [(field.enemy_goal.center + field.enemy_goal.down + field.enemy_goal.down + field.enemy_goal.down) / 4,
+              (field.enemy_goal.center + field.enemy_goal.up + field.enemy_goal.up + field.enemy_goal.up) / 4,
+              field.enemy_goal.center]
+        p2 = [p1[0]-field.enemies[0].get_pos(),p1[1]-field.enemies[0].get_pos(),p1[2]-field.enemies[0].get_pos()]
+        p_mag= [p2[0].mag(),p2[1].mag(),p2[2].mag()]
+
+        # print(p1[0].x, p1[0].y, p1[1].x, p1[1].y)
+
+
+        actions[1] = KickActions.Straight(p1[p_mag.index(max(p_mag))])
+
 
 
         v5 = field.enemies[1].get_pos() - field.ball.get_pos() 

@@ -89,7 +89,7 @@ class Strategy:
                 The robot number 9 grabs the ball at an angle of 0.0 (it looks to the right, along the OX axis)
         """
         
-        v3 = field.ball.get_pos() - field.allies[1].get_pos() 
+        v3 = field.ball.get_pos() - field.allies[0].get_pos() 
         v1 = field.ball.get_pos() - field.enemy_goal.center 
         v4 = v1 + v1/v1.mag()*50
         # actions[1] = Actions.GoToPoint(field.enemy_goal.center+v4,v3.arg())
@@ -102,9 +102,43 @@ class Strategy:
         # print(p1[0].x, p1[0].y, p1[1].x, p1[1].y)
 
 
-        actions[1] = KickActions.Straight(p1[p_mag.index(max(p_mag))])
+        actions[0] = KickActions.Straight(p1[p_mag.index(max(p_mag))])                                      
 
 
+        v11 = field.enemies[0].get_pos() - field.ball.get_pos()
+        v12 = aux.rotate(v11, math.pi / 2).unity()*100+field.enemies[0].get_pos()
+        v13 = aux.rotate(v11, math.pi / 2 * 3).unity()*100+field.enemies[0].get_pos()
+        field.strategy_image.draw_line(field.enemies[0].get_pos(),v12,(0,0,0))
+        field.strategy_image.draw_line(field.enemies[0].get_pos(),v13,(255,0,0))
+        v14 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v12,'SR' )
+        v15 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v13,'SR' )
+        if v14 != None:
+            field.strategy_image.draw_circle(v14,(255,0,0),10)
+        if v15 != None:
+            field.strategy_image.draw_circle(v15,(0,0,255),10)
+
+        if v15 == None and v14 != None:  #kust red dot
+            v16 = (v14 + field.enemy_goal.up) / 2
+            field.strategy_image.draw_line(field.enemy_goal.up,v14)
+            actions[1] = KickActions.Straight(v16) 
+        elif v15 != None and v14 == None: #just blue dot
+            v16 = (v15 + field.enemy_goal.down) / 2
+            field.strategy_image.draw_line(field.enemy_goal.down,v15)
+            actions[1] = KickActions.Straight(v16)
+        elif v15 != None and v14 != None:
+            v16 = (v14 + field.enemy_goal.up) /2
+            v17 = (v15 + field.enemy_goal.down) /2
+            if (v16-field.enemy_goal.up).mag() > (v17-field.enemy_goal.down).mag():
+                actions[1] = KickActions.Straight(v16)
+            else:   
+                actions[1] = KickActions.Straight(v17)
+        else:
+            v14 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v12,'LR' )
+            v15 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v13,'LR' )
+            if v14 == None or v15 == None or (v14.y <= -400 and v15.y <= -400) or (v14.y >= 400 and v15.y >= 400):
+                actions[1] = KickActions.Straight(field.enemy_goal.center)
+            else:
+                actions[1] = Actions.Stop()
 
         v5 = field.enemies[1].get_pos() - field.ball.get_pos() 
         v6 = field.enemies[1].get_pos() - v5.unity()*200

@@ -24,6 +24,7 @@ class Strategy:
     ) -> None:
         self.we_active = False
         self.is_target_set = False
+        self.ball_ago = None
 
     def process(self, field: fld.Field) -> list[Optional[Action]]:
         """Game State Management"""
@@ -89,7 +90,7 @@ class Strategy:
                 The robot number 9 grabs the ball at an angle of 0.0 (it looks to the right, along the OX axis)
         """
         
-        v3 = field.ball.get_pos() - field.allies[0].get_pos() 
+        v3 = field.ball.get_pos() - field.allies[0].get_pos()
         v1 = field.ball.get_pos() - field.enemy_goal.center 
         v4 = v1 + v1/v1.mag()*50
         # actions[1] = Actions.GoToPoint(field.enemy_goal.center+v4,v3.arg())
@@ -112,14 +113,42 @@ class Strategy:
         actions[0] = Actions.GoToPoint(v6,v7.arg())
         field.strategy_image.draw_line(v5, v6 )
         field.strategy_image.draw_line(field.ball.get_pos() - field.enemy_goal.center, field.allies[1].get_pos() )
-        v8 = aux.get_line_intersection(aux.Point(field.polarity*2050,-1800),aux.Point(field.polarity*2050,1800),field.ally_goal.center,field.enemies[0].get_pos())
-        v10 = field.enemies[0].get_pos() - field.ally_goal.center
-        if v8 != None:
-            actions[2] = Actions.GoToPoint(v8,v10.arg())
-        field.strategy_image.draw_line(aux.Point(-2050,-1800),aux.Point(-2050,1800))
-        field.strategy_image.draw_line(field.ally_goal.center,field.enemies[0].get_pos())
-        field.strategy_image.draw_line(aux.Point(2050,-1800),aux.Point(2050,1800))
+
+
+        
+        
         kick(field,actions,0,1)
+        self.defen(field,actions,2)
+
+
+
+
+    def defen(self,field: fld.Field, actions: list[Optional[Action]],gk) -> None:
+        def cls ():
+            p_cls = aux.closest_point_on_line(aux.Point(field.polarity*2050,675),aux.Point(field.polarity*2050,-675),field.ball.get_pos())
+            v10 = field.ball.get_pos() - field.allies[gk].get_pos()
+            if aux.is_point_inside_poly(field.ball.get_pos(),field.ally_goal.hull):
+                actions[gk] = KickActions.Straight(field.allies[1].get_pos())
+            else:
+                actions[gk] = Actions.GoToPoint(p_cls,v10.arg(),ignore_ball=True)
+        if self.ball_ago != None and self.ball_ago != field.ball.get_pos():
+            v8 = aux.get_line_intersection(aux.Point(field.polarity*2050,-675),aux.Point(field.polarity*2050,675),self.ball_ago,field.ball.get_pos(),'SL')
+            v10 = field.ball.get_pos() - field.allies[gk].get_pos()
+            if v8 != None:
+                actions[gk] = Actions.GoToPoint(v8,v10.arg(),ball_catch=True)
+            else:
+                cls()
+            field.strategy_image.draw_line(aux.Point(2050,-675),aux.Point(2050,-675))
+            field.strategy_image.draw_line(field.allies[2].get_pos(),field.ball.get_pos())
+            field.strategy_image.draw_line(aux.Point(-2050,675),aux.Point(-2050,-675))
+        else:
+            cls()
+            
+        self.ball_ago = field.ball.get_pos()
+
+        
+
+
 
 def kick(field: fld.Field, actions: list[Optional[Action]],gk,at) -> None:
     v11 = field.enemies[gk].get_pos() - field.ball.get_pos()

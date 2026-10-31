@@ -103,25 +103,62 @@ class Strategy:
         # print(p1[0].x, p1[0].y, p1[1].x, p1[1].y)
 
 
-        actions[0] = KickActions.Straight(p1[p_mag.index(max(p_mag))])                                      
+       # actions[0] = KickActions.Straight(p1[p_mag.index(max(p_mag))])                                      
 
        
 
-        v5 = field.enemies[1].get_pos() - field.ball.get_pos() 
-        v6 = field.enemies[1].get_pos() - v5.unity()*200
-        v7 = v6 - field.enemies[1].get_pos()
-        actions[0] = Actions.GoToPoint(v6,v7.arg())
+        self.defen_wall(field,actions,3)
+
+
+        
+        
+        kick(field,actions,field.enemy_gk_id,1)
+        self.defen(field,actions,field.gk_id)
+    def defen_wall(self,field: fld.Field, actions: list[Optional[Action]],gk) -> None:
+            hullbig = aux.offset_polygon(field.ally_goal.hull,200)
+            def cls_2 ():
+                p_cls = aux.nearest_point_on_poly(field.ball.get_pos(),hullbig)
+                v10 = field.ball.get_pos() - field.allies[gk].get_pos()
+                if aux.is_point_inside_poly(field.ball.get_pos(),hullbig):
+                    actions[gk] = KickActions.Straight(field.allies[1].get_pos())
+                else:
+                    actions[gk] = Actions.GoToPoint(p_cls,v10.arg(),ignore_ball=True)
+                print('cls')
+            if self.ball_ago != None and self.ball_ago != field.ball.get_pos():
+                v8_1= aux.get_line_intersection(hullbig[0],hullbig[1],self.ball_ago,field.ball.get_pos(),'SL')
+                v8_2= aux.get_line_intersection(hullbig[1],hullbig[2],self.ball_ago,field.ball.get_pos(),'SL')
+                v8_3= aux.get_line_intersection(hullbig[2],hullbig[3],self.ball_ago,field.ball.get_pos(),'SL')
+                intersections = []
+                if v8_1 != None:
+                    intersections.append(v8_1)
+                if v8_2 != None:
+                    intersections.append(v8_2)
+                if v8_3 != None:
+                    intersections.append(v8_3)
+                # distances = [aux.dist(v8_1),aux.dist(v8_2),aux.dist(v8_3)]
+                # v8 = intersections[distances.index(min(distances))]
+                if intersections != []:
+                    v8 = min(intersections, key = lambda x: aux.dist(x, field.ball.get_pos()))
+                    v10 = field.ball.get_pos() - field.allies[gk].get_pos()
+                    actions[gk] = Actions.GoToPoint(v8,v10.arg(),ball_catch=True)
+                else:
+                    cls_2()
+                field.strategy_image.draw_line(aux.Point(2050,-675),aux.Point(2050,-675))
+                field.strategy_image.draw_line(field.allies[2].get_pos(),field.ball.get_pos())
+                field.strategy_image.draw_line(aux.Point(-2050,675),aux.Point(-2050,-675))
+            else:
+                cls_2()
+                
+            self.ball_ago = field.ball.get_pos()
+
+    def no_pass (self,field: fld.Field, actions: list[Optional[Action]],dfa,ate) -> None:
+        v5 = field.enemies[ate].get_pos() - field.ball.get_pos() 
+        v6 = field.enemies[ate].get_pos() - v5.unity()*200
+        v7 = v6 - field.enemies[ate].get_pos()
+        actions[dfa] = Actions.GoToPoint(v6,v7.arg())
         field.strategy_image.draw_line(v5, v6 )
-        field.strategy_image.draw_line(field.ball.get_pos() - field.enemy_goal.center, field.allies[1].get_pos() )
-
-
-        
-        
-        kick(field,actions,0,1)
-        self.defen(field,actions,2)
-
-
-
+        field.strategy_image.draw_line(field.ball.get_pos() - field.enemy_goal.center, field.allies[ate].get_pos() )
+        print('No pass')
 
     def defen(self,field: fld.Field, actions: list[Optional[Action]],gk) -> None:
         def cls ():

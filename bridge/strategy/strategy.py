@@ -107,12 +107,21 @@ class Strategy:
 
        
 
-        self.defen_wall(field,actions,3)
-
-
         
-        
-        kick(field,actions,field.enemy_gk_id,1)
+        r = None
+        m =  math.inf
+        for i in field.active_allies(False):
+            dst = aux.dist(i.get_pos(),field.ball.get_pos())
+            print(dst)
+            if m >=  dst:
+                m = dst
+                r = i        
+        if r != None:       
+            kick(field,actions,field.enemy_gk_id,r.r_id)
+            print(r.r_id)
+        if len(field.active_allies(False)) > 1:
+            id = 1 - field.active_allies(False).index(r) # finding id in LIST!!!
+            self.defen_wall(field,actions,field.active_allies(False)[id].r_id) # finding id of ROBOT!!!
         self.defen(field,actions,field.gk_id)
     def defen_wall(self,field: fld.Field, actions: list[Optional[Action]],gk) -> None:
             hullbig = aux.offset_polygon(field.ally_goal.hull,200)

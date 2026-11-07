@@ -108,21 +108,34 @@ class Strategy:
        
 
         
-        r = None
+        at = None
+        df = None
+        gk = None
         m =  math.inf
         for i in field.active_allies(False):
             dst = aux.dist(i.get_pos(),field.ball.get_pos())
             print(dst)
             if m >=  dst:
                 m = dst
-                r = i        
-        if r != None:       
-            kick(field,actions,field.enemy_gk_id,r.r_id)
-            print(r.r_id)
+                at = i
+        if field.allies[field.gk_id].is_used:
+            gk = field.gk_id
         if len(field.active_allies(False)) > 1:
-            id = 1 - field.active_allies(False).index(r) # finding id in LIST!!!
-            self.defen_wall(field,actions,field.active_allies(False)[id].r_id) # finding id of ROBOT!!!
-        self.defen(field,actions,field.gk_id)
+            id = 1 - field.active_allies(False).index(at)
+            df = field.active_allies(False)[id].r_id
+        if gk != None and at != None:
+            ps = self.defen(field,actions,gk,at.r_id)
+            tel = f'Goalkeeper: {gk},Defense: {df},Passing: {ps},Attaker: {at.r_id}'
+            field.strategy_image.send_telemetry('Telemetry',tel)
+        if at != None:   
+            self.kick(field,actions,field.enemy_gk_id,at.r_id,ps)
+            print(at.r_id)
+        
+
+        if len(field.active_allies(False)) > 1:
+            id = 1 - field.active_allies(False).index(at) # finding id in LIST!!!
+            self.defen_wall(field,actions,df) # finding id of ROBOT!!!
+        
     def defen_wall(self,field: fld.Field, actions: list[Optional[Action]],gk) -> None:
             hullbig = aux.offset_polygon(field.ally_goal.hull,200)
             def cls_2 ():
@@ -169,69 +182,105 @@ class Strategy:
         field.strategy_image.draw_line(field.ball.get_pos() - field.enemy_goal.center, field.allies[ate].get_pos() )
         print('No pass')
 
-    def defen(self,field: fld.Field, actions: list[Optional[Action]],gk) -> None:
-        def cls ():
-            p_cls = aux.closest_point_on_line(aux.Point(field.polarity*2050,675),aux.Point(field.polarity*2050,-675),field.ball.get_pos())
+    def defen(self,field: fld.Field, actions: list[Optional[Action]],gk,at) -> None:
+        ps = False
+        def cls ():       
+            p_cls = aux.nearest_point_in_poly(field.ball.get_pos(),field.ally_goal.hull)
             v10 = field.ball.get_pos() - field.allies[gk].get_pos()
+            v8_1= aux.get_line_intersection(field.ally_goal.hull[0],field.ally_goal.hull[1],field.ally_goal.center,field.ball.get_pos(),'SL')
+            v8_2= aux.get_line_intersection(field.ally_goal.hull[1],field.ally_goal.hull[2],field.ally_goal.center,field.ball.get_pos(),'SL')
+            v8_3= aux.get_line_intersection(field.ally_goal.hull[2],field.ally_goal.hull[3],field.ally_goal.center,field.ball.get_pos(),'SL')
+            intersections = []
+            if v8_1 != None:
+                intersections.append(v8_1)
+            if v8_2 != None:
+                intersections.append(v8_2)
+            if v8_3 != None:
+                intersections.append(v8_3)
+            # distances = [aux.dist(v8_1),aux.dist(v8_2),aux.dist(v8_3)]
+            # v8 = intersections[distances.index(min(distances))]
+            if intersections != []:
+                v8 = min(intersections, key = lambda x: aux.dist(x, field.ball.get_pos()))
+                v10 = field.ball.get_pos() - field.allies[gk].get_pos()
+                actions[gk] = Actions.GoToPoint(v8,v10.arg(),ball_catch=True)
+                print('intersections')
             if aux.is_point_inside_poly(field.ball.get_pos(),field.ally_goal.hull):
-                actions[gk] = KickActions.Straight(field.allies[1].get_pos())
+                actions[gk] = KickActions.Straight(field.allies[at].get_pos())
+                return  True
             else:
-                actions[gk] = Actions.GoToPoint(p_cls,v10.arg(),ignore_ball=True)
-        if self.ball_ago != None and self.ball_ago != field.ball.get_pos():
+                return False
+            
+        if self.ball_ago != None and (field.ball.get_pos() - self.ball_ago).mag() > 10 :
             v8 = aux.get_line_intersection(aux.Point(field.polarity*2050,-675),aux.Point(field.polarity*2050,675),self.ball_ago,field.ball.get_pos(),'SL')
             v10 = field.ball.get_pos() - field.allies[gk].get_pos()
             if v8 != None:
                 actions[gk] = Actions.GoToPoint(v8,v10.arg(),ball_catch=True)
             else:
-                cls()
+                ps = cls()
             field.strategy_image.draw_line(aux.Point(2050,-675),aux.Point(2050,-675))
             field.strategy_image.draw_line(field.allies[2].get_pos(),field.ball.get_pos())
             field.strategy_image.draw_line(aux.Point(-2050,675),aux.Point(-2050,-675))
         else:
-            cls()
+            ps = cls()
             
         self.ball_ago = field.ball.get_pos()
-
+        print(ps, actions[gk])
+        return ps
         
 
 
 
-def kick(field: fld.Field, actions: list[Optional[Action]],gk,at) -> None:
-    v11 = field.enemies[gk].get_pos() - field.ball.get_pos()
-    v12 = aux.rotate(v11, math.pi / 2).unity()*100+field.enemies[gk].get_pos()
-    v13 = aux.rotate(v11, math.pi / 2 * 3).unity()*100+field.enemies[gk].get_pos()
-    field.strategy_image.draw_line(field.enemies[gk].get_pos(),v12,(0,0,0))
-    field.strategy_image.draw_line(field.enemies[gk].get_pos(),v13,(255,0,0))
-    v14 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v12,'SR' )
-    v15 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v13,'SR' )
-    if v14 != None:
-        field.strategy_image.draw_circle(v14,(255,0,0),10)
-    if v15 != None:
-        field.strategy_image.draw_circle(v15,(0,0,255),10)
-
-    if v15 == None and v14 != None:  #kust red dot
-        v16 = (v14 + field.enemy_goal.up) / 2
-        field.strategy_image.draw_line(field.enemy_goal.up,v14)
-        actions[at] = KickActions.Straight(v16) 
-    elif v15 != None and v14 == None: #just blue dot
-        v16 = (v15 + field.enemy_goal.down) / 2
-        field.strategy_image.draw_line(field.enemy_goal.down,v15)
-        actions[at] = KickActions.Straight(v16)
-    elif v15 != None and v14 != None:
-        v16 = (v14 + field.enemy_goal.up) /2
-        v17 = (v15 + field.enemy_goal.down) /2
-        if (v16-field.enemy_goal.up).mag() > (v17-field.enemy_goal.down).mag():
-            actions[at] = KickActions.Straight(v16)
-        else:   
-            actions[at] = KickActions.Straight(v17)
-    else:
-        v14 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v12,'LR' )
-        v15 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v13,'LR' )
-        if v14 == None or v15 == None or (v14.y <= -400 and v15.y <= -400) or (v14.y >= 400 and v15.y >= 400):
-            actions[at] = KickActions.Straight(field.enemy_goal.center)
+    def kick(self,field: fld.Field, actions: list[Optional[Action]],gk: int,at: int,ps: bool) -> None:
+        def catching_of_ball():
+            v19n =  field.ball.get_pos() - field.allies[at].get_pos()
+            field.strategy_image.draw_line(field.ball.get_pos(),v19n*5)
+            if (field.ball.get_pos() - self.ball_ago).mag() > 10 :
+                v20 = aux.closest_point_on_line(self.ball_ago,field.ball.get_pos(),field.allies[at].get_pos(),'L') 
+                actions[at] = Actions.GoToPoint(v20,v19n.arg(),ignore_ball=True)
+            else:
+                actions[at] = Actions.GoToPoint(field.allies[at].get_pos(),v19n.arg(),ignore_ball=True)
+        if ps:
+            catching_of_ball()
         else:
-            actions[at] = Actions.Stop()
-        
+            if aux.line_circle_intersect(self.ball_ago,field.ball.get_pos(),field.allies[at].get_pos(),100,'R') and (field.ball.get_pos() - self.ball_ago).mag() > 10 :
+                catching_of_ball()
+            else:
+                v11 = field.enemies[gk].get_pos() - field.ball.get_pos()
+                v12 = aux.rotate(v11, math.pi / 2).unity()*100+field.enemies[gk].get_pos()
+                v13 = aux.rotate(v11, math.pi / 2 * 3).unity()*100+field.enemies[gk].get_pos()
+                field.strategy_image.draw_line(field.enemies[gk].get_pos(),v12,(0,0,0))
+                field.strategy_image.draw_line(field.enemies[gk].get_pos(),v13,(255,0,0))
+                v14 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v12,'SR' )
+                v15 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v13,'SR' )
+                if v14 != None:
+                    field.strategy_image.draw_circle(v14,(255,0,0),10)
+                if v15 != None:
+                    field.strategy_image.draw_circle(v15,(0,0,255),10)
+
+                if v15 == None and v14 != None:  #kust red dot
+                    v16 = (v14 + field.enemy_goal.up) / 2
+                    field.strategy_image.draw_line(field.enemy_goal.up,v14)
+                    actions[at] = KickActions.Straight(v16) 
+                elif v15 != None and v14 == None: #just blue dot
+                    v16 = (v15 + field.enemy_goal.down) / 2
+                    field.strategy_image.draw_line(field.enemy_goal.down,v15)
+                    actions[at] = KickActions.Straight(v16)
+                elif v15 != None and v14 != None:
+                    v16 = (v14 + field.enemy_goal.up) /2
+                    v17 = (v15 + field.enemy_goal.down) /2
+                    if (v16-field.enemy_goal.up).mag() > (v17-field.enemy_goal.down).mag():
+                        actions[at] = KickActions.Straight(v16)
+                    else:   
+                        actions[at] = KickActions.Straight(v17)
+                else:
+                    v14 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v12,'LR' )
+                    v15 = aux.get_line_intersection(field.enemy_goal.up,field.enemy_goal.down,field.ball.get_pos(),v13,'LR' )
+                    if v14 == None or v15 == None or (v14.y <= -400 and v15.y <= -400) or (v14.y >= 400 and v15.y >= 400):
+                        actions[at] = KickActions.Straight(field.enemy_goal.center)
+                    else:
+                        actions[at] = Actions.Stop()
+            self.ball_ago = field.ball.get_pos()
+    
         
         
         

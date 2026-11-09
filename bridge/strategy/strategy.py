@@ -24,7 +24,8 @@ class Strategy:
     ) -> None:
         self.we_active = False
         self.is_target_set = False
-        self.ball_ago = [0,0,0,0,0]
+        self.ball_ago = None
+        self.ball_ago_list = [None,None,None,None,None]
         self.etr = 0
 
     def process(self, field: fld.Field) -> list[Optional[Action]]:
@@ -115,7 +116,6 @@ class Strategy:
         m =  math.inf
         for i in field.active_allies(False):
             dst = aux.dist(i.get_pos(),field.enemy_goal.center)
-            print(dst)
             if m >=  dst:
                 m = dst
                 at = i
@@ -130,13 +130,26 @@ class Strategy:
             field.strategy_image.send_telemetry('Telemetry',tel)
         if at != None:   
             self.kick(field,actions,field.enemy_gk_id,at.r_id,ps)
-            print(at.r_id)
+
         
 
         if len(field.active_allies(False)) > 1:
             id = 1 - field.active_allies(False).index(at) # finding id in LIST!!!
             self.defen_wall(field,actions,df) # finding id of ROBOT!!!
-        self.ball_ago = field.ball.get_pos()  
+  
+        self.ball_ago = self.ball_ago_list[self.etr%5]
+        
+        print("===")
+        print(self.etr%5)
+        if self.ball_ago in self.ball_ago_list:
+            print(self.ball_ago_list.index(self.ball_ago))
+        if not None in self.ball_ago_list:
+            print(self.ball_ago_list.index(max(self.ball_ago_list, key = lambda x: aux.dist(x, field.ball.get_pos()))))
+        print("---")
+        self.ball_ago_list[self.etr%5] = field.ball.get_pos()
+        self.etr += 1
+        
+        
     def defen_wall(self,field: fld.Field, actions: list[Optional[Action]],gk) -> None:
             hullbig = aux.offset_polygon(field.ally_goal.hull,200)
             def cls_2 ():
@@ -146,31 +159,31 @@ class Strategy:
                     actions[gk] = KickActions.Straight(field.allies[1].get_pos())
                 else:
                     actions[gk] = Actions.GoToPoint(p_cls,v10.arg(),ignore_ball=True)
-                print('cls')
-            if self.ball_ago != None and self.ball_ago != field.ball.get_pos():
-                v8_1= aux.get_line_intersection(hullbig[0],hullbig[1],self.ball_ago,field.ball.get_pos(),'SL')
-                v8_2= aux.get_line_intersection(hullbig[1],hullbig[2],self.ball_ago,field.ball.get_pos(),'SL')
-                v8_3= aux.get_line_intersection(hullbig[2],hullbig[3],self.ball_ago,field.ball.get_pos(),'SL')
-                intersections = []
-                if v8_1 != None:
-                    intersections.append(v8_1)
-                if v8_2 != None:
-                    intersections.append(v8_2)
-                if v8_3 != None:
-                    intersections.append(v8_3)
-                # distances = [aux.dist(v8_1),aux.dist(v8_2),aux.dist(v8_3)]
-                # v8 = intersections[distances.index(min(distances))]
-                if intersections != []:
-                    v8 = min(intersections, key = lambda x: aux.dist(x, field.ball.get_pos()))
-                    v10 = field.ball.get_pos() - field.allies[gk].get_pos()
-                    actions[gk] = Actions.GoToPoint(v8,v10.arg(),ball_catch=True)
+                if self.ball_ago != None and self.ball_ago != field.ball.get_pos():
+                    v8_1= aux.get_line_intersection(hullbig[0],hullbig[1],self.ball_ago,field.ball.get_pos(),'SL')
+                    v8_2= aux.get_line_intersection(hullbig[1],hullbig[2],self.ball_ago,field.ball.get_pos(),'SL')
+                    v8_3= aux.get_line_intersection(hullbig[2],hullbig[3],self.ball_ago,field.ball.get_pos(),'SL')
+                    intersections = []
+                    if v8_1 != None:
+                        intersections.append(v8_1)
+                    if v8_2 != None:
+                        intersections.append(v8_2)
+                    if v8_3 != None:
+                        intersections.append(v8_3)
+                    # distances = [aux.dist(v8_1),aux.dist(v8_2),aux.dist(v8_3)]
+                    # v8 = intersections[distances.index(min(distances))]
+                    if intersections != []:
+                        v8 = min(intersections, key = lambda x: aux.dist(x, field.ball.get_pos()))
+                        v10 = field.ball.get_pos() - field.allies[gk].get_pos()
+                        actions[gk] = Actions.GoToPoint(v8,v10.arg(),ball_catch=True)
+                    else:
+                        cls_2()
+                    field.strategy_image.draw_line(aux.Point(2050,-675),aux.Point(2050,-675))
+                    field.strategy_image.draw_line(field.allies[2].get_pos(),field.ball.get_pos())
+                    field.strategy_image.draw_line(aux.Point(-2050,675),aux.Point(-2050,-675))
                 else:
                     cls_2()
-                field.strategy_image.draw_line(aux.Point(2050,-675),aux.Point(2050,-675))
-                field.strategy_image.draw_line(field.allies[2].get_pos(),field.ball.get_pos())
-                field.strategy_image.draw_line(aux.Point(-2050,675),aux.Point(-2050,-675))
-            else:
-                cls_2()
+            
                 
             
 

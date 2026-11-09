@@ -24,7 +24,8 @@ class Strategy:
     ) -> None:
         self.we_active = False
         self.is_target_set = False
-        self.ball_ago = None
+        self.ball_ago = [0,0,0,0,0]
+        self.etr = 0
 
     def process(self, field: fld.Field) -> list[Optional[Action]]:
         """Game State Management"""
@@ -113,7 +114,7 @@ class Strategy:
         gk = None
         m =  math.inf
         for i in field.active_allies(False):
-            dst = aux.dist(i.get_pos(),field.ball.get_pos())
+            dst = aux.dist(i.get_pos(),field.enemy_goal.center)
             print(dst)
             if m >=  dst:
                 m = dst
@@ -135,7 +136,7 @@ class Strategy:
         if len(field.active_allies(False)) > 1:
             id = 1 - field.active_allies(False).index(at) # finding id in LIST!!!
             self.defen_wall(field,actions,df) # finding id of ROBOT!!!
-        
+        self.ball_ago = field.ball.get_pos()  
     def defen_wall(self,field: fld.Field, actions: list[Optional[Action]],gk) -> None:
             hullbig = aux.offset_polygon(field.ally_goal.hull,200)
             def cls_2 ():
@@ -171,7 +172,7 @@ class Strategy:
             else:
                 cls_2()
                 
-            self.ball_ago = field.ball.get_pos()
+            
 
     def no_pass (self,field: fld.Field, actions: list[Optional[Action]],dfa,ate) -> None:
         v5 = field.enemies[ate].get_pos() - field.ball.get_pos() 
@@ -223,8 +224,9 @@ class Strategy:
         else:
             ps = cls()
             
-        self.ball_ago = field.ball.get_pos()
+        
         print(ps, actions[gk])
+        
         return ps
         
 
@@ -242,8 +244,13 @@ class Strategy:
         if ps:
             catching_of_ball()
         else:
+            field.strategy_image.draw_circle(field.allies[at].get_pos(),[255,0,0],100)
+            print((self.ball_ago-field.ball.get_pos()))
+            field.strategy_image.draw_line(field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,field.allies[at].get_pos(),(255,0,0),10)
+            field.strategy_image.draw_line(self.ball_ago,field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*1000,(255,0,0),10)
             if aux.line_circle_intersect(self.ball_ago,field.ball.get_pos(),field.allies[at].get_pos(),100,'R') and (field.ball.get_pos() - self.ball_ago).mag() > 10 :
                 catching_of_ball()
+                
             else:
                 v11 = field.enemies[gk].get_pos() - field.ball.get_pos()
                 v12 = aux.rotate(v11, math.pi / 2).unity()*100+field.enemies[gk].get_pos()
@@ -279,10 +286,10 @@ class Strategy:
                         actions[at] = KickActions.Straight(field.enemy_goal.center)
                     else:
                         actions[at] = Actions.Stop()
-            self.ball_ago = field.ball.get_pos()
+            
     
         
-        
+    
         
         
         

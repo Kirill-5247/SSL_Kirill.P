@@ -219,7 +219,7 @@ class Strategy:
                 actions[gk] = Actions.GoToPoint(v8,v10.arg(),ball_catch=True)
                 print('intersections')
             if aux.is_point_inside_poly(field.ball.get_pos(),field.ally_goal.hull):
-                actions[gk] = KickActions.Straight(field.allies[at].get_pos())
+                actions[gk] = KickActions.Straight(field.allies[at].get_pos(),3)
                 return  True
             else:
                 return False
@@ -257,11 +257,11 @@ class Strategy:
         if ps:
             catching_of_ball()
         else:
-            field.strategy_image.draw_circle(field.allies[at].get_pos(),[255,0,0],100)
+            field.strategy_image.draw_circle(field.allies[at].get_pos(),[255,0,0],200)
             print((self.ball_ago-field.ball.get_pos()))
             field.strategy_image.draw_line(field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,field.allies[at].get_pos(),(255,0,0),10)
             field.strategy_image.draw_line(self.ball_ago,field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*1000,(255,0,0),10)
-            if aux.line_circle_intersect(self.ball_ago,field.ball.get_pos(),field.allies[at].get_pos(),100,'R') and (field.ball.get_pos() - self.ball_ago).mag() > 10 :
+            if aux.line_circle_intersect(self.ball_ago,field.ball.get_pos(),field.allies[at].get_pos(),200,'R') and (field.ball.get_pos() - self.ball_ago).mag() > 10 :
                 catching_of_ball()
                 
             else:

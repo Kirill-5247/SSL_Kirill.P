@@ -26,6 +26,8 @@ class Strategy:
         self.is_target_set = False
         self.ball_ago = None
         self.ball_ago_list = [None,None,None,None,None]
+        self.speed = None
+        self.coef1 = 0.3
         self.etr = 0
 
     def process(self, field: fld.Field) -> list[Optional[Action]]:
@@ -139,7 +141,11 @@ class Strategy:
             self.defen_wall(field,actions,df) # finding id of ROBOT!!!
   
         self.ball_ago = self.ball_ago_list[self.etr%5]
-        
+        if self.speed != None:
+            self.speed = self.speed * self.coef1 + field.ball.get_vel() * (1-self.coef1)
+            field.strategy_image.draw_line(field.ball.get_pos(),self.speed + field.ball.get_pos())
+        else:
+            self.speed = field.ball.get_vel()
         print("===")
         print(self.etr%5)
         if self.ball_ago in self.ball_ago_list:
@@ -199,6 +205,7 @@ class Strategy:
         print('No pass')
 
     def defen(self,field: fld.Field, actions: list[Optional[Action]],gk,at) -> None:
+        hullbig = aux.offset_polygon(field.ally_goal.hull,150)
         ps = False
         def cls ():       
             p_cls = aux.nearest_point_in_poly(field.ball.get_pos(),field.ally_goal.hull)
@@ -220,8 +227,13 @@ class Strategy:
                 v10 = field.ball.get_pos() - field.allies[gk].get_pos()
                 actions[gk] = Actions.GoToPoint(v8,v10.arg(),ball_catch=True)
                
-            if aux.is_point_inside_poly(field.ball.get_pos(),field.ally_goal.hull):
-                actions[gk] = KickActions.Straight(field.allies[at].get_pos(),6)
+            if aux.is_point_inside_poly(field.ball.get_pos(),hullbig):
+                if aux.dist(field.ball.get_pos(),field.allies[at].get_pos()) >= 800:
+                    actions[gk] = KickActions.Straight(field.allies[at].get_pos(),5)
+                elif aux.dist(field.ball.get_pos(),field.allies[at].get_pos()) >= 400:
+                    actions[gk] = KickActions.Straight(field.allies[at].get_pos(),3)
+                else:
+                    actions[gk] = KickActions.Straight(field.allies[at].get_pos(),2)
                 return  True
             else:
                 return False
@@ -238,10 +250,6 @@ class Strategy:
             field.strategy_image.draw_line(aux.Point(-2050,675),aux.Point(-2050,-675))
         else:
             ps = cls()
-            
-        
-        
-        
         return ps
         
 
@@ -261,8 +269,8 @@ class Strategy:
         elif self.ball_ago != None:
             field.strategy_image.draw_circle(field.allies[at].get_pos(),[255,0,0],200)
             
-            field.strategy_image.draw_line(field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*(10**10),field.allies[at].get_pos(),(255,0,0),10)
-            field.strategy_image.draw_line(self.ball_ago,field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*1000,(255,0,0),10)
+            #field.strategy_image.draw_line(field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*(10**10),field.allies[at].get_pos(),(255,0,0),10)
+            #field.strategy_image.draw_line(self.ball_ago,field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*1000,(255,0,0),10)
             if aux.line_circle_intersect(self.ball_ago,field.ball.get_pos(),field.allies[at].get_pos(),200,'R') and (field.ball.get_pos() - self.ball_ago).mag() > 10 :
                 catching_of_ball()
                 

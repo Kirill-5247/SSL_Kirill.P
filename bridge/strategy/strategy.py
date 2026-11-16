@@ -141,9 +141,13 @@ class Strategy:
             self.defen_wall(field,actions,df) # finding id of ROBOT!!!
   
         self.ball_ago = self.ball_ago_list[self.etr%5]
-        if self.speed != None:
-            self.speed = self.speed * self.coef1 + field.ball.get_vel() * (1-self.coef1)
-            field.strategy_image.draw_line(field.ball.get_pos(),self.speed + field.ball.get_pos())
+        if self.speed != None and self.ball_ago != None:
+            self.speed = self.speed * self.coef1 + field.ball.get_vel() * (1-self.coef1) 
+            field.strategy_image.draw_line(field.ball.get_pos(),self.speed*1000 + field.ball.get_pos(),[255,0,0],30)
+            vr = (field.ball.get_pos() - self.ball_ago)*1000+field.ball.get_pos()
+            field.strategy_image.draw_line(field.ball.get_pos(),vr,[0,0,255])
+            vr2  = (field.ball.get_pos() - self.ball_ago_list[self.etr%5-1])*1000+field.ball.get_pos()
+            field.strategy_image.draw_line(field.ball.get_pos(),vr2,[0,255,0],10)
         else:
             self.speed = field.ball.get_vel()
         print("===")
@@ -239,7 +243,8 @@ class Strategy:
                 return False
             
         if self.ball_ago != None and (field.ball.get_pos() - self.ball_ago).mag() > 10 :
-            v8 = aux.get_line_intersection(aux.Point(field.polarity*2050,-675),aux.Point(field.polarity*2050,675),self.ball_ago,field.ball.get_pos(),'SL')
+            vv = self.speed + field.ball.get_pos()
+            v8 = aux.get_line_intersection(aux.Point(field.polarity*2050,-675),aux.Point(field.polarity*2050,675),field.ball.get_pos(),vv,'SL')
             v10 = field.ball.get_pos() - field.allies[gk].get_pos()
             if v8 != None:
                 actions[gk] = Actions.GoToPoint(v8,v10.arg(),ball_catch=True)
@@ -267,7 +272,7 @@ class Strategy:
         if ps:
             catching_of_ball()
         elif self.ball_ago != None:
-            field.strategy_image.draw_circle(field.allies[at].get_pos(),[255,0,0],200)
+            field.strategy_image.draw_circle(field.allies[at].get_pos(),[255,0,0], 30)
             
             #field.strategy_image.draw_line(field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*(10**10),field.allies[at].get_pos(),(255,0,0),10)
             #field.strategy_image.draw_line(self.ball_ago,field.ball.get_pos()+(self.ball_ago-field.ball.get_pos())*1000,(255,0,0),10)

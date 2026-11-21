@@ -1,6 +1,7 @@
 """High-level strategy code"""
 
 # !v DEBUG ONLY
+from bridge.strategy import metrics 
 import math  # type: ignore  # noqa: F401
 from time import time  # type: ignore  # noqa: F401
 from typing import Optional
@@ -131,8 +132,9 @@ class Strategy:
             ps = self.defen(field,actions,gk,at.r_id)
             tel = f'Goalkeeper: {gk},Defense: {df},Passing: {ps},Attaker: {at.r_id},Active allies{field.active_allies(False)}'
             field.strategy_image.send_telemetry('Telemetry',tel)
-        if at != None:   
-            self.kick(field,actions,field.enemy_gk_id,at.r_id,ps)
+        if at != None:  
+            
+            self.kick(field,actions,field.enemy_gk_id,at.r_id,ps,metrics.heatmap(field,at.get_pos(),field.enemies[field.enemy_gk_id].get_pos(),field.enemy_gk_id))
 
         
 
@@ -159,6 +161,7 @@ class Strategy:
         print("---")
         self.ball_ago_list[self.etr%5] = field.ball.get_pos()
         self.etr += 1
+        
         
         
     def defen_wall(self,field: fld.Field, actions: list[Optional[Action]],df) -> None:
@@ -260,7 +263,7 @@ class Strategy:
 
 
 
-    def kick(self,field: fld.Field, actions: list[Optional[Action]],gk: int,at: int,ps: bool) -> None:
+    def kick(self,field: fld.Field, actions: list[Optional[Action]],gk: int,at: int,ps: bool,point) -> None:
         def catching_of_ball():
             v19n =  field.ball.get_pos() - field.allies[at].get_pos()
             field.strategy_image.draw_line(field.ball.get_pos(),v19n*5)
@@ -280,6 +283,7 @@ class Strategy:
                 catching_of_ball()
                 
             else:
+                vr3 = field.allies[at].get_pos() - field.enemy_goal.center 
                 v11 = field.enemies[gk].get_pos() - field.ball.get_pos()
                 v12 = aux.rotate(v11, math.pi / 2).unity()*100+field.enemies[gk].get_pos()
                 v13 = aux.rotate(v11, math.pi / 2 * 3).unity()*100+field.enemies[gk].get_pos()
@@ -313,8 +317,10 @@ class Strategy:
                     if v14 == None or v15 == None or (v14.y <= -400 and v15.y <= -400) or (v14.y >= 400 and v15.y >= 400):
                         actions[at] = KickActions.Straight(field.enemy_goal.center)
                     else:
-                        actions[at] = Actions.Stop()
-            
+                        actions[at] = Actions.BallGrab(vr3.arg())
+                        if aux.dist(field.allies[at].get_pos(),field.ball.get_pos()) < 10:
+                            actions[at] = Actions.GoToPoint(vr3.arg())
+
     
         
     

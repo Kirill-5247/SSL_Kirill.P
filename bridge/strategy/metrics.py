@@ -54,7 +54,7 @@ def clean_goal(field: fld.Field,gk,point):
 def closest_point(field: fld.Field,at,enemy,point):
     b = 0
     for i in range(0,len(field.active_enemies(True))):
-        if aux.dist(at,point) < 1200 and aux.dist(field.active_enemies(True)[i].get_pos(),point) > 400:
+        if aux.dist(field.allies[at].get_pos(),point) < 1200 and aux.dist(field.active_enemies(True)[i].get_pos(),point) > 400:
             b = b
         else:
             b+=1
@@ -67,19 +67,20 @@ def closest_point(field: fld.Field,at,enemy,point):
 def heatmap(field: fld.Field,at,enemy_df,enemy_gk):
     m_p = None
     m = 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-    for x in range(-const.FIELD_DX,const.FIELD_DX,150):
-        for y in range(-const.FIELD_DY,const.FIELD_DY,150):
-            if clean_goal(field,enemy_gk,aux.Point(x,y)) and closest_point(field,at,enemy_df,aux.Point(x,y)):
-                field.strategy_image.draw_circle(aux.Point(x,y),(0,200,0),10)
-                if aux.dist(aux.Point(x,y),at) < m:
-                    m_p = aux.Point(x,y)
-                    m = aux.dist(aux.Point(x,y),at)
-            elif clean_goal(field,enemy_gk,aux.Point(x,y)):
-                field.strategy_image.draw_circle(aux.Point(x,y),(170,100,0),10)
-            elif closest_point(field,at,enemy_df,aux.Point(x,y)):
-                field.strategy_image.draw_circle(aux.Point(x,y),(200,55,0),10)
+    for x in range(-const.FIELD_DX,const.FIELD_DX,50):
+        for y in range(-const.FIELD_DY,const.FIELD_DY,50):
+            if aux.is_point_inside_circle(aux.Point(x,y),field.allies[at].get_pos(),1200):      
+                if clean_goal(field,enemy_gk,aux.Point(x,y)) and closest_point(field,at,enemy_df,aux.Point(x,y)):
+                    field.strategy_image.draw_circle(aux.Point(x,y),(0,255,0),10)
+                    if aux.dist(aux.Point(x,y),field.allies[at].get_pos()) < m:
+                        m_p = aux.Point(x,y)
+                        m = aux.dist(aux.Point(x,y),field.allies[at].get_pos())
+                elif closest_point(field,at,enemy_df,aux.Point(x,y)):
+                    field.strategy_image.draw_circle(aux.Point(x,y),(200,55,0),10)
+                else:
+                    field.strategy_image.draw_circle(aux.Point(x,y),(255,0,0),10)
             else:
-                field.strategy_image.draw_circle(aux.Point(x,y),(255,0,0),10)
+                continue
     field.strategy_image.draw_circle(m_p,(0,0,255),20)
     return m_p
 

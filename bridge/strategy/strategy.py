@@ -134,7 +134,7 @@ class Strategy:
             field.strategy_image.send_telemetry('Telemetry',tel)
         if at != None:  
             
-            self.kick(field,actions,field.enemy_gk_id,at.r_id,ps,metrics.heatmap(field,at.get_pos(),field.enemies[field.enemy_gk_id].get_pos(),field.enemy_gk_id))
+            self.kick(field,actions,field.enemy_gk_id,at.r_id,ps,metrics.heatmap(field,at.r_id,field.enemies[field.enemy_gk_id].get_pos(),field.enemy_gk_id))
 
         
 
